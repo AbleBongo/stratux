@@ -1252,6 +1252,35 @@ func processNMEALineLow(l string, fakeGpsTimeToCurr bool) (sentenceUsed bool) {
 		updateGPSPerf = true
 		thisGpsPerf.msgType = x[0]
 
+		// Fallback for GPS devices that do not emit GSA/GSV (e.g., WTGPS-300P)
+		// This fallback sets reasonable defaults if a valid fix is present but other info is missing.
+		if tmpSituation.GPSFixQuality >= 1 {
+			// Since GGA doesn't have a "solution type" field, we approximate:
+			// 1 = 3D fix, 2 = DGPS/SBAS fix, etc.
+			gpsSolutionType := 1
+			if tmpSituation.GPSFixQuality >= 1 {
+				gpsSolutionType = 1
+			}
+			if tmpSituation.GPSFixQuality >= 2 {
+				gpsSolutionType = 2
+			}
+			// Fallback logic: only if fixQuality and solutionType indicate valid fix
+			if tmpSituation.GPSFixQuality >= 1 && gpsSolutionType >= 1 {
+				if tmpSituation.GPSNACp == 0 {
+					tmpSituation.GPSNACp = 8 // Approx. 0.3 NM
+				}
+				if tmpSituation.GPSSatellites == 0 {
+					tmpSituation.GPSSatellites = 6 // Enough for valid 3D fix
+				}
+				if tmpSituation.GPSHorizontalAccuracy == 0 || tmpSituation.GPSHorizontalAccuracy >= 999999 {
+					tmpSituation.GPSHorizontalAccuracy = 10.0
+				}
+				if tmpSituation.GPSVerticalAccuracy == 0 || tmpSituation.GPSVerticalAccuracy >= 999999 {
+					tmpSituation.GPSVerticalAccuracy = 15.0
+				}
+			}
+		}
+
 		// We've made it this far, so that means we've processed "everything" and can now make the change to mySituation.
 		mySituation = tmpSituation
 
