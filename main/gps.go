@@ -1280,7 +1280,6 @@ func processNMEALineLow(l string, fakeGpsTimeToCurr bool) (sentenceUsed bool) {
                 }
                 // Ensure Stratux treats the GPS as valid even if GSA/GSV missing
                 globalStatus.GPS_connected = true
-                globalStatus.GPS_solution_type = gpsSolutionType
             }
         }
 
